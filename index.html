@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QuizForge</title>
     
+    <!-- 網站分頁小圖示 (Favicon) -->
+    <link rel="icon" type="image/jpeg" href="logo-.jpg">
+    
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -75,9 +78,12 @@
             align-items: center;
             justify-content: center;
             gap: 0.5rem;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
         .btn:hover { background-color: #333; }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn:active { transform: scale(0.98); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
         
         .btn-primary {
             background-color: var(--primary-color);
@@ -89,6 +95,9 @@
             background-color: var(--primary-hover);
             transform: translateY(-2px);
             box-shadow: 0 4px 15px rgba(200, 245, 66, 0.3);
+        }
+        .btn-primary:active:not(:disabled) {
+            transform: scale(0.98);
         }
 
         .btn-outline {
@@ -105,10 +114,16 @@
             text-align: center;
             margin-bottom: 2rem;
         }
-        .header h1 {
-            font-size: 2.5rem;
-            color: var(--primary-color);
-            letter-spacing: -1px;
+        
+        /* Logo Style */
+        .app-logo {
+            max-width: 280px;
+            width: 100%;
+            height: auto;
+            margin: 0 auto 1.5rem;
+            display: block;
+            border-radius: 12px;
+            /* 移除之前過亮的光暈陰影，讓深色 JPG 自然融入背景 */
         }
 
         .upload-zone {
@@ -185,6 +200,7 @@
             cursor: pointer;
             font-size: 0.9rem;
             transition: all 0.2s;
+            user-select: none;
         }
         .chip.active {
             background: var(--primary-color);
@@ -224,6 +240,7 @@
             justify-content: space-between;
             align-items: center;
             cursor: pointer;
+            user-select: none;
         }
         .pdf-preview-content {
             padding: 1rem;
@@ -300,19 +317,34 @@
             
             opacity: 0;
             animation: fadeUp 0.4s ease forwards;
+
+            /* 針對行動裝置優化：移除原生高亮、禁止選取文字 */
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
         }
         @keyframes fadeUp {
             from { opacity: 0; transform: translateY(15px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
-        .option-btn:hover:not(:disabled) {
-            border-color: #555;
-            background-color: var(--surface-light);
+        /* 僅在支援滑鼠的裝置上啟用 hover，防止手機點擊後卡住 hover 狀態 */
+        @media (hover: hover) {
+            .option-btn:hover:not(:disabled) {
+                border-color: #555;
+                background-color: var(--surface-light);
+            }
         }
+
+        /* 點擊瞬間的反饋 */
+        .option-btn:active:not(:disabled) {
+            transform: scale(0.98);
+        }
+
+        /* 強化選中狀態，讓手機端視覺更明確 */
         .option-btn.selected {
             border-color: var(--primary-color);
-            background-color: rgba(200, 245, 66, 0.05);
+            background-color: rgba(200, 245, 66, 0.15);
+            box-shadow: inset 0 0 0 1px var(--primary-color);
         }
         .option-btn:disabled { cursor: default; }
 
@@ -443,6 +475,7 @@
             height: 450px;
             margin: 2rem 0;
             cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
         }
         .flashcard-inner {
             position: relative;
@@ -458,7 +491,6 @@
             position: absolute;
             top: 0; left: 0;
             width: 100%; height: 100%;
-            /* 修正 3D 翻轉的背面透視 Bug */
             -webkit-backface-visibility: hidden;
             backface-visibility: hidden;
             background-color: var(--surface-color);
@@ -475,7 +507,9 @@
             z-index: 2;
             transform: rotateY(0deg);
         }
-        .flashcard-front:hover { border-color: #555; }
+        @media (hover: hover) {
+            .flashcard-front:hover { border-color: #555; }
+        }
         .flashcard-back {
             transform: rotateY(180deg);
             z-index: 1;
@@ -537,7 +571,7 @@
         .modal-actions { display: flex; gap: 1rem; justify-content: center; }
 
         @media (max-width: 600px) {
-            .header h1 { font-size: 2rem; }
+            .app-logo { max-width: 200px; }
             .stats-grid { grid-template-columns: 1fr; }
             .top-bar { font-size: 0.9rem; }
             .btn { padding: 0.6rem 1.2rem; }
@@ -550,18 +584,19 @@
     <!-- ================= 1. 上傳畫面 ================= -->
     <div id="uploadScreen" class="container">
         <div class="header">
-            <h1>QuizForge</h1>
-            <p style="color: var(--text-muted);">智能題庫解析與練習平台</p>
+            <!-- 加入使用者的 Logo 圖片 -->
+            <img src="LOGO.png" alt="QuizForge Logo" class="app-logo">
+            <!-- <p style="color: var(--text-muted);">智能題庫解析與練習平台</p> -->
         </div>
 
         <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
             <button id="btnHomeFlashcard" class="btn btn-outline" style="flex: 1;" onclick="openFlashcards()" disabled>
-                📇 錯題閃卡 (0)
+                ⧉ 錯題閃卡 (0)
             </button>
         </div>
 
         <div id="dropZone" class="upload-zone">
-            <div style="font-size: 2.5rem; margin-bottom: 1rem;">📄</div>
+            <div style="font-size: 2.5rem; margin-bottom: 1rem; color: var(--primary-color);">⇪</div>
             <h3>點擊或拖曳檔案至此</h3>
             <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.5rem;">支援 .txt 或 .pdf 格式</p>
             <input type="file" id="fileInput" accept=".txt,.pdf" class="hidden">
@@ -572,14 +607,14 @@
         <!-- PDF 預覽區 (預設隱藏) -->
         <div id="pdfPreviewBox" class="pdf-preview hidden">
             <div class="pdf-preview-header" onclick="togglePdfPreview()">
-                <span>📑 解析預覽 (含內建題庫)</span>
+                <span>▤ 解析預覽 (含內建題庫)</span>
                 <span id="pdfPreviewIcon">▼</span>
             </div>
             <div id="pdfPreviewContent" class="pdf-preview-content hidden"></div>
         </div>
 
         <div class="settings-panel">
-            <h3 style="margin-bottom: 1rem; font-family: var(--font-title);">⚙️ 測驗設定</h3>
+            <h3 style="margin-bottom: 1rem; font-family: var(--font-title);">⛭ 測驗設定</h3>
             
             <div class="settings-row">
                 <label class="checkbox-label">
@@ -607,7 +642,7 @@
         <div class="status-text" id="statusText">請輸入題目或上傳檔案</div>
         
         <button id="btnParseStart" class="btn btn-primary" style="width: 100%; font-size: 1.1rem; padding: 1rem;" disabled>
-            🚀 解析並開始測驗
+            ▶ 解析並開始測驗
         </button>
     </div>
 
@@ -617,7 +652,7 @@
             <div class="font-code" style="color: var(--text-muted);">
                 題目 <span id="currentQNum" style="color: var(--text-main); font-weight: 700;">1</span> / <span id="totalQNum">10</span>
             </div>
-            <button class="btn" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;" onclick="showQuitModal()">⏹ 結束</button>
+            <button class="btn" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;" onclick="showQuitModal()">■ 結束</button>
         </div>
         
         <div class="progress-container">
@@ -638,12 +673,15 @@
             <button id="btnSubmitMulti" class="btn btn-primary hidden">確認送出</button>
             <button id="btnNext" class="btn btn-primary hidden">下一題 →</button>
         </div>
+        <div style="text-align: right; margin-top: 1rem; color: #555; font-size: 0.8rem;">
+            ⌨ 提示：按 <b>Enter</b> 或 <b>空白鍵</b> 可快速送出 / 進入下一題
+        </div>
     </div>
 
     <!-- ================= 3. 結算畫面 ================= -->
     <div id="resultScreen" class="container hidden">
         <div class="result-header">
-            <h1 style="font-size: 2.5rem; margin-bottom: 2rem;">測驗完成 🎉</h1>
+            <h1 style="font-size: 2.5rem; margin-bottom: 2rem;">測驗完成 ★</h1>
             
             <div class="score-circle" id="scoreCircle">
                 <div class="score-text">
@@ -665,7 +703,7 @@
         </div>
 
         <div class="restart-panel">
-            <h3 style="margin-bottom: 1rem; text-align: center;">🔄 重新練習設定</h3>
+            <h3 style="margin-bottom: 1rem; text-align: center;">⟳ 重新練習設定</h3>
             <div style="display: flex; justify-content: center; margin-bottom: 1rem;">
                 <div class="chip-group" id="restartChips">
                     <!-- JS 生成 -->
@@ -675,13 +713,13 @@
                 <span id="restartAvailableText">共 N 題可用</span>
             </div>
             <div class="restart-actions">
-                <button class="btn btn-primary" onclick="restartQuiz()">🔄 開始新測驗</button>
-                <button class="btn btn-outline" onclick="openFlashcards()" id="btnResultFlashcard">📇 複習錯題</button>
-                <button class="btn" onclick="backToUpload()">📂 返回設定</button>
+                <button class="btn btn-primary" onclick="restartQuiz()">⟳ 開始新測驗</button>
+                <button class="btn btn-outline" onclick="openFlashcards()" id="btnResultFlashcard">⧉ 複習錯題</button>
+                <button class="btn" onclick="backToUpload()">↶ 返回設定</button>
             </div>
         </div>
 
-        <h3 style="margin-bottom: 1.5rem;">📋 題目詳解</h3>
+        <h3 style="margin-bottom: 1.5rem;">☰ 題目詳解</h3>
         <div id="detailsList" class="details-list">
             <!-- 詳解動態生成 -->
         </div>
@@ -690,12 +728,12 @@
     <!-- ================= 4. 閃卡畫面 ================= -->
     <div id="flashcardScreen" class="container hidden">
         <div class="top-bar">
-            <h2>📇 錯題閃卡複習</h2>
-            <button class="btn" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;" onclick="backToUpload()">🏠 回首頁</button>
+            <h2>⧉ 錯題閃卡複習</h2>
+            <button class="btn" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;" onclick="backToUpload()">⌂ 回首頁</button>
         </div>
 
         <div id="fcEmptyState" class="empty-state hidden">
-            <div style="font-size: 4rem; margin-bottom: 1rem;">🎉</div>
+            <div style="font-size: 4rem; margin-bottom: 1rem; color: var(--primary-color);">✧</div>
             <h3>太棒了！您的錯題本空空如也。</h3>
             <p>去進行測驗並發掘需要複習的地方吧！</p>
         </div>
@@ -709,7 +747,7 @@
                 <div class="flashcard-inner" id="fcInner">
                     <!-- 正面：題目與選項 -->
                     <div class="flashcard-front">
-                        <div class="fc-tag">點擊卡片翻面</div>
+                        <div class="fc-tag">點擊卡片或按 [空白鍵] 翻面</div>
                         <div class="fc-qtext" id="fcQText">題目內容...</div>
                         <div class="fc-options" id="fcOptions">
                             <!-- 選項文字 -->
@@ -727,9 +765,12 @@
             </div>
 
             <div class="flashcard-controls">
-                <button class="btn" id="fcBtnPrev" onclick="prevFlashcard()">⬅️ 上一題</button>
-                <button class="btn btn-outline" onclick="removeCurrentFlashcard()">✅ 已學會 (移出錯題本)</button>
-                <button class="btn" id="fcBtnNext" onclick="nextFlashcard()">下一題 ➡️</button>
+                <button class="btn" id="fcBtnPrev" onclick="prevFlashcard()">← 上一題</button>
+                <button class="btn btn-outline" onclick="removeCurrentFlashcard()">✔ 已學會 (移出錯題本)</button>
+                <button class="btn" id="fcBtnNext" onclick="nextFlashcard()">下一題 →</button>
+            </div>
+            <div style="text-align: center; margin-top: 1rem; color: #555; font-size: 0.8rem;">
+                ⌨ 提示：可使用 <b>空白鍵</b> 翻面，<b>左右方向鍵 (← →)</b> 切換題目
             </div>
         </div>
     </div>
@@ -1291,6 +1332,46 @@ Correct Answer: AE`;
             elBtnStart.addEventListener('click', startQuizHandler);
             
             updateFlashcardButtons();
+
+            // 註冊全域鍵盤快捷鍵
+            initKeyboardShortcuts();
+        }
+
+        function initKeyboardShortcuts() {
+            document.addEventListener('keydown', (e) => {
+                // 處理測驗畫面的快捷鍵
+                if (!screens.quiz.classList.contains('hidden') && screens.modal.classList.contains('hidden')) {
+                    if (e.key === 'Enter' || e.code === 'Space') {
+                        // 防止空白鍵造成網頁捲動 (除非使用者正在操作按鈕等輸入元素)
+                        if (e.code === 'Space' && e.target.tagName !== 'BUTTON' && e.target.tagName !== 'INPUT') {
+                            e.preventDefault();
+                        }
+                        
+                        const btnNext = document.getElementById('btnNext');
+                        const btnSubmitMulti = document.getElementById('btnSubmitMulti');
+
+                        if (!btnNext.classList.contains('hidden')) {
+                            // 若有「下一題/查看結果」按鈕，代表已批改，自動點擊
+                            btnNext.click();
+                        } else if (!btnSubmitMulti.classList.contains('hidden') && !btnSubmitMulti.disabled) {
+                            // 若是多選題且按鈕可用，代表可送出
+                            btnSubmitMulti.click();
+                        }
+                    }
+                }
+                
+                // 處理閃卡畫面的快捷鍵
+                if (!screens.flashcard.classList.contains('hidden')) {
+                    if (e.code === 'Space') {
+                        if (e.target.tagName !== 'BUTTON') e.preventDefault();
+                        flipFlashcard();
+                    } else if (e.key === 'ArrowRight') {
+                        if (!document.getElementById('fcBtnNext').disabled) nextFlashcard();
+                    } else if (e.key === 'ArrowLeft') {
+                        if (!document.getElementById('fcBtnPrev').disabled) prevFlashcard();
+                    }
+                }
+            });
         }
 
         function debounce(func, wait) {
@@ -1424,7 +1505,6 @@ Correct Answer: AE`;
             let lines = text.split('\n');
             let bottomAnswersMap = {};
             
-            // 【修復】擴大答案區匹配範圍至 [A-H] (原本僅至 A-E)
             const answerLineRegex = /(?:\d+\s*[\.\:\-]\s*[A-H1-5]+(?:\s*,\s*[A-H1-5]+)*\s*){4,}/i; 
             
             let possibleAnswerBlock = "";
@@ -1502,13 +1582,11 @@ Correct Answer: AE`;
                 if (parsingState !== "idle" && currentQ) {
                     const ansLineMatch = line.match(/^(?:Correct Answer|Answer|解答|答案)[\s\:\：]*(.*)/i);
                     if (ansLineMatch) {
-                        // 【修復】答案提取範圍擴大至 A-H
                         let ansStr = ansLineMatch[1].toUpperCase().replace(/[^A-H1-5]/g, '');
                         if(ansStr) currentQ.correctAnswers = ansStr.split('');
                         continue;
                     }
 
-                    // 【修復】選項判定擴大至 A-H (原本是 [A-E])
                     const optMatch = line.match(/^([A-H])[\.\)]\s*(.*)/i) || line.match(/^[\(（]([1-5])[）\)]\s*(.*)/i);
                     if (optMatch) {
                         parsingState = "in_opt";
@@ -1621,7 +1699,7 @@ Correct Answer: AE`;
             if (q.hasImage) hintArea.innerHTML += `<div class="hint-bar hint-warn">⚠ 此題含圖表，請對照原始題庫文件。</div>`;
             if (q.isMultiSelect) {
                 let countHint = q.correctAnswers.length > 1 ? `請選擇 ${q.correctAnswers.length} 個答案` : `請選擇所有正確答案`;
-                hintArea.innerHTML += `<div class="hint-bar hint-multi">☑ 多選題，${countHint}。</div>`;
+                hintArea.innerHTML += `<div class="hint-bar hint-multi">✓ 多選題，${countHint}。</div>`;
             }
 
             document.getElementById('questionText').textContent = q.questionText;
@@ -1629,7 +1707,6 @@ Correct Answer: AE`;
             let displayOptions = JSON.parse(JSON.stringify(q.options));
             if (config.shuffleOpt) displayOptions = shuffleArray(displayOptions);
 
-            // 【增加】將支援的動態選項英文字母擴大至 J 以容納更多選項的題目
             const displayLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
             displayOptions.forEach((opt, idx) => { opt.displayLetter = displayLetters[idx]; });
             q.mappedOptions = displayOptions;
@@ -1726,9 +1803,9 @@ Correct Answer: AE`;
             if(q.correctAnswers.length === 0) {
                  feedbackArea.innerHTML = `<div class="feedback-bar feedback-wrong">⚠ 原題庫未提供解答。</div>`;
             } else if (isCorrect) {
-                feedbackArea.innerHTML = `<div class="feedback-bar feedback-correct">✅ 答對了！</div>`;
+                feedbackArea.innerHTML = `<div class="feedback-bar feedback-correct">✔ 答對了！</div>`;
             } else {
-                feedbackArea.innerHTML = `<div class="feedback-bar feedback-wrong">❌ 答錯了，正確答案是 ${correctDisplayLetters.join(', ')}</div>`;
+                feedbackArea.innerHTML = `<div class="feedback-bar feedback-wrong">✖ 答錯了，正確答案是 ${correctDisplayLetters.join(', ')}</div>`;
                 document.querySelectorAll('.option-btn').forEach(b => {
                     if(q.correctAnswers.includes(b.dataset.originalKey)) {
                         b.style.borderColor = 'var(--success)';
@@ -1775,7 +1852,6 @@ Correct Answer: AE`;
         function collectWrongQuestions() {
             userAnswers.forEach(ans => {
                 if (!ans.isCorrect) {
-                    // 改用 questionText 來判斷是否重複，避免未來更換題庫時 ID 衝突
                     const exists = wrongQuestionsBank.find(wq => wq.questionText === ans.questionText);
                     if (!exists) {
                         const originalQ = currentQuiz.find(q => q.id === ans.qId);
@@ -1783,7 +1859,7 @@ Correct Answer: AE`;
                     }
                 }
             });
-            saveFlashcardsToStorage(); // 新增錯題後，自動存入 localStorage
+            saveFlashcardsToStorage(); 
             updateFlashcardButtons();
         }
 
@@ -1791,7 +1867,7 @@ Correct Answer: AE`;
             const count = wrongQuestionsBank.length;
             const btnHome = document.getElementById('btnHomeFlashcard');
             
-            btnHome.innerHTML = `📇 錯題閃卡 (${count})`;
+            btnHome.innerHTML = `⧉ 錯題閃卡 (${count})`;
             btnHome.disabled = count === 0;
         }
 
@@ -1825,15 +1901,17 @@ Correct Answer: AE`;
                 const card = document.createElement('div');
                 card.className = 'detail-card';
                 
-                const userDisplayLetters = ans.mappedOptions
+                const mappedOpts = ans.mappedOptions || [];
+                
+                const userDisplayLetters = mappedOpts
                     .filter(opt => ans.selectedKeys.includes(opt.originalKey))
                     .map(opt => opt.displayLetter).sort().join(', ') || '未作答';
 
-                const correctOpts = ans.mappedOptions.filter(opt => ans.correctAnswersOriginal.includes(opt.originalKey));
+                const correctOpts = mappedOpts.filter(opt => ans.correctAnswersOriginal.includes(opt.originalKey));
                 const correctTextHtml = correctOpts.map(opt => `${opt.displayLetter}. ${opt.text}`).join('<br>');
 
-                const isCorrectStr = ans.isCorrect ? '<span style="color:var(--success)">✅ 答對</span>' : '<span style="color:var(--danger)">❌ 答錯</span>';
-                const imgTag = ans.hasImage ? ' 🖼️' : '';
+                const isCorrectStr = ans.isCorrect ? '<span style="color:var(--success)">✔ 答對</span>' : '<span style="color:var(--danger)">✖ 答錯</span>';
+                const imgTag = ans.hasImage ? ' ▨' : '';
 
                 card.innerHTML = `
                     <div class="detail-q-header">
@@ -1938,7 +2016,7 @@ Correct Answer: AE`;
             if (currentFlashcardIndex >= wrongQuestionsBank.length && currentFlashcardIndex > 0) {
                 currentFlashcardIndex--;
             }
-            saveFlashcardsToStorage(); // 移除錯題後，同步更新 localStorage
+            saveFlashcardsToStorage(); 
             updateFlashcardButtons();
             renderFlashcard();
         }
@@ -1952,6 +2030,12 @@ Correct Answer: AE`;
             if(userAnswers.length > 0) {
                 while(userAnswers.length < currentQuiz.length) {
                     let unansQ = currentQuiz[userAnswers.length];
+                    if (!unansQ.mappedOptions) {
+                        let defaultOptions = JSON.parse(JSON.stringify(unansQ.options));
+                        const displayLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+                        defaultOptions.forEach((opt, idx) => { opt.displayLetter = displayLetters[idx]; });
+                        unansQ.mappedOptions = defaultOptions;
+                    }
                     saveUserAnswer(unansQ, [], false);
                 }
                 showResults();
