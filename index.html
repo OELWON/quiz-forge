@@ -6,7 +6,7 @@
     <title>QuizForge</title>
     
     <!-- 網站分頁小圖示 (Favicon) -->
-    <link rel="icon" type="image/jpeg" href="logo-.jpg">
+    <link rel="icon" type="image/jpeg" href="./Logo-Favicon.png">
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -123,7 +123,6 @@
             margin: 0 auto 1.5rem;
             display: block;
             border-radius: 12px;
-            /* 移除之前過亮的光暈陰影，讓深色 JPG 自然融入背景 */
         }
 
         .upload-zone {
@@ -163,6 +162,7 @@
             padding: 1.5rem;
             border-radius: 12px;
             margin-bottom: 1.5rem;
+            border: 1px solid #333;
         }
 
         .settings-row {
@@ -581,33 +581,50 @@
 </head>
 <body>
 
-    <!-- ================= 1. 上傳畫面 ================= -->
+    <!-- ================= 1. 上傳與管理畫面 ================= -->
     <div id="uploadScreen" class="container">
         <div class="header">
-            <!-- 加入使用者的 Logo 圖片 -->
             <img src="LOGO.png" alt="QuizForge Logo" class="app-logo">
-            <!-- <p style="color: var(--text-muted);">智能題庫解析與練習平台</p> -->
         </div>
 
-        <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
-            <button id="btnHomeFlashcard" class="btn btn-outline" style="flex: 1;" onclick="openFlashcards()" disabled>
-                ⧉ 錯題閃卡 (0)
-            </button>
+        <!-- 題庫管家 Panel -->
+        <div class="settings-panel">
+            <div class="settings-row" style="margin-bottom: 1rem; border-bottom: 1px solid #333; padding-bottom: 1rem;">
+                <h3 style="font-family: var(--font-title); margin: 0;">📁 選擇與管理題庫</h3>
+                <button class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.85rem; border-color: var(--danger); color: var(--danger);" onclick="showDeleteBankModal()">🗑 刪除目前題庫</button>
+            </div>
+            
+            <select id="bankSelector" class="raw-input" style="height: auto; padding: 0.8rem; margin-bottom: 1rem; font-family: var(--font-body); font-size: 1rem;">
+                <!-- 選項由 JS 動態生成 -->
+            </select>
+            
+            <div style="display: flex; gap: 1rem;">
+                <button id="btnHomeFlashcard" class="btn btn-outline" style="flex: 1;" onclick="openFlashcards()" disabled>
+                    ⧉ 錯題閃卡 (0)
+                </button>
+            </div>
         </div>
 
-        <div id="dropZone" class="upload-zone">
-            <div style="font-size: 2.5rem; margin-bottom: 1rem; color: var(--primary-color);">⇪</div>
-            <h3>點擊或拖曳檔案至此</h3>
-            <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.5rem;">支援 .txt 或 .pdf 格式</p>
-            <input type="file" id="fileInput" accept=".txt,.pdf" class="hidden">
-        </div>
+        <!-- 原始文字與檔案上傳區 -->
+        <details id="uploadDetails" style="margin-bottom: 1.5rem;">
+            <summary style="cursor: pointer; color: var(--text-muted); margin-bottom: 1rem; user-select: none;">
+                ▶ 展開/隱藏 原始文字編輯與上傳區 (可直接上傳新題庫)
+            </summary>
+            
+            <div id="dropZone" class="upload-zone">
+                <div style="font-size: 2.5rem; margin-bottom: 1rem; color: var(--primary-color);">⇪</div>
+                <h3>點擊或拖曳檔案至此建立新題庫</h3>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.5rem;">支援 .txt 或 .pdf 格式</p>
+                <input type="file" id="fileInput" accept=".txt,.pdf" class="hidden">
+            </div>
 
-        <textarea id="rawInput" class="raw-input" placeholder="或直接在此貼上題庫純文字..."></textarea>
+            <textarea id="rawInput" class="raw-input" placeholder="或直接在此貼上題庫純文字..."></textarea>
+        </details>
 
         <!-- PDF 預覽區 (預設隱藏) -->
         <div id="pdfPreviewBox" class="pdf-preview hidden">
             <div class="pdf-preview-header" onclick="togglePdfPreview()">
-                <span>▤ 解析預覽 (含內建題庫)</span>
+                <span>▤ 解析預覽</span>
                 <span id="pdfPreviewIcon">▼</span>
             </div>
             <div id="pdfPreviewContent" class="pdf-preview-content hidden"></div>
@@ -639,7 +656,7 @@
             </div>
         </div>
 
-        <div class="status-text" id="statusText">請輸入題目或上傳檔案</div>
+        <div class="status-text" id="statusText">請選擇或上傳題庫</div>
         
         <button id="btnParseStart" class="btn btn-primary" style="width: 100%; font-size: 1.1rem; padding: 1rem;" disabled>
             ▶ 解析並開始測驗
@@ -728,7 +745,7 @@
     <!-- ================= 4. 閃卡畫面 ================= -->
     <div id="flashcardScreen" class="container hidden">
         <div class="top-bar">
-            <h2>⧉ 錯題閃卡複習</h2>
+            <h2 id="fcTitleHeader">⧉ 錯題閃卡複習</h2>
             <button class="btn" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;" onclick="backToUpload()">⌂ 回首頁</button>
         </div>
 
@@ -787,481 +804,96 @@
         </div>
     </div>
 
+    <!-- ================= 6. 刪除題庫確認 Modal ================= -->
+    <div id="deleteBankModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h3>確定要刪除此題庫嗎？</h3>
+            <p id="deleteBankText" style="color: var(--danger); margin-bottom: 2rem;">這將會清除該題庫的所有內容與對應的錯題紀錄，且無法恢復。</p>
+            <div class="modal-actions">
+                <button class="btn" onclick="hideDeleteBankModal()">取消</button>
+                <button class="btn btn-primary" style="background-color: var(--danger); color: white;" onclick="confirmDeleteBank()">確定刪除</button>
+            </div>
+        </div>
+    </div>
+
     <!-- ================= JavaScript 邏輯 ================= -->
     <script>
-        // 內建題庫：CCNA第一、二章
-        const CCNA_BANK = `CCNA 第一、二章考題
-
-QUESTION 54
-Which two statements about Ethernet standards are true? (choose two)
-A. Ethernet is defined by IEEE standard 802.2
-B. Ethernet is defined by IEEE standard 802.3
-C. Ethernet 10BASE-T dose not support full-duplex.
-D. When an Ethernet network uses CSMA/CD, it terminates transmission as soon as collision occurs
-E. When an Ethernet network uses CSMA/CA, it terminates transmission as soon as collision occurs
-Correct Answer: BD
-
-QUESTION 62
-What feature uses a random time to re-sent a frame?
-A. CSMA/CA
-B. http://bbs.hh010.com/
-C. http://bbs.hh010.com/
-D. CSMA/CD
-Correct Answer: D
-
-QUESTION 192
-In an Ethernet network, under what two scenarios can devices transmit? (Choose two.)
-A. when they receive a special token
-B. when there is a carrier
-C. when they detect no other devices are sending
-D. when the medium is idle
-E. when the server grants access
-Correct Answer: CD
-
-QUESTION 444
-Which MAC protocol sets a random timer to reattempt communication ?
-A. RARP
-B. CSMA/CA
-C. CSMA/CD
-D. IEEE 802.1x
-Correct Answer: C
-
-QUESTION 8
-Which two statements about late collisions are true? (Choose two.)
-A. They may indicate a duplex mismatch.
-B. By definition, they occur after the 512th bit of the frame has been transmitted.
-C. They indicate received frames that did not pass the FCS match.
-D. They are frames that exceed 1518 bytes.
-E. They occur when CRC errors and interference occur on the cable.
-Correct Answer: AB
-
-QUESTION 37
-Which interface counter can you use to diagnose a duplex mismatch problem?
-A. no earner
-B. late collisions
-C. giants
-D. CRC errors
-E. deferred
-F. runts
-Correct Answer: B
-
-QUESTION 34
-Which three statements accurately describe layer 2 Ethernet switches?(choose three)
-A. Microsegmentation decreases the number of collisions on the network.
-B. if a switch receives a frame for an unkown destination, it uses ARP to resolve the address.
-C. Spanning Tree Protocol allows switches to automatically share vlan information.
-D. In a properly functioning network with redundant switched paths, each switched aegment will contain one root bridge with all its ports in the forwarding state. All other switches in that broadcast domain will have only one root port.
-E. Establishing vlans increases the number of broadcast domains.
-F. Switches that are configured with vlans make forwarding decisions based on both layer 2 and layer 3 address information.
-Correct Answer: ADE
-
-QUESTION 300
-If three devices are plugged into one port on a switch and two devices are plugged into a different port, how many collision domains are on the switch?
-A. 2
-B. 4
-C. 5
-D. 6
-Correct Answer: A
-
-QUESTION 49
-Which two statements about wireless LAN controllers are true? (Choose two.)
-A. They can simplify the management and deployment of wireless LANs.
-B. They rely on external firewalls for WLAN security.
-C. They are best suited to smaller wireless networks.
-D. They must be configured through a GUI over HTTP or HTTPS.
-E. They can manage mobility policies at a systemwide level.
-Correct Answer: AE
-
-QUESTION 242
-Refer to the exhibit.What two results would occur if the hub were to be replaced with a switch that is configured with one Ethernet VLAN? (choose two)
-A. The number of collision domains would decrease.
-B. The number of collision domains would increase.
-C. The number of broadcast domains would remain the same.
-D. The number of collision domains would remain the same.
-E. The number of broadcast domains would increase.
-Correct Answer: BC
-
-QUESTION 404
-Which of the following statements describe the network shown in the graphic? (Choose two.)
-A. There are two broadcast domains in the network.
-B. There are four broadcast domains in the network.
-C. There are six broadcast domains in the network.
-D. There are four collision domains in the network.
-E. There are five collision domains in the network.
-F. There are seven collision domains in the network.
-Correct Answer: AF
-
-QUESTION 268
-Which statement about unicast frame forwarding on a switch is true?
-A. The TCAM table stores destination MAC addresses
-B. If the destination MAC address is unknown, the frame is flooded to every port that is configured in the same VLAN except on the port that it was received on.
-C. The CAM table is used to determine whether traffic is permitted or denied on a switch
-D. The source address is used to determine the switch port to which a frame is forwarded
-Correct Answer: B
-
-QUESTION 130
-Refer to the exhibit.Switch-1 needs to send data to a host with a MAC address of 00b0.d056.efa4.What will Switch-1 do with this data?
-A. switch-1 will drop the data because it dose not have an entry for that MAC address
-B. switch-1 will flood the data out all of its port from which the data originated
-C. switch-1 will forward the data to its default gateway
-D. switch-1 will send an ARP request out all its ports except the port from which the data originated
-Correct Answer: B
-
-QUESTION 213
-Which type of mac address is aged automatically by the switch?
-A. Dynamic
-B. Static
-C. automatic
-D. manual
-Correct Answer: A
-
-QUESTION 298
-Which type of MAC address is aged automatically by the switch?
-A. automatic
-B. manual
-C. dynamic
-D. static
-Correct Answer: C
-
-QUESTION 348
-Which two types of information are held in the MAC address table? (Choose two)
-A. MAC address
-B. soure IP address
-C. destination IP address
-D. Protocols
-E. Port numbers
-Correct Answer: AE
-
-QUESTION 407
-Refer to the exhibit.Which two statements are true of the interfaces on switch1?(choose two)
-A. A hub is connected directly to FastEthernet0/5
-B. FastEthernet0/1 is configured as a trunk link.
-C. FastEthernet0/5 has statically assigned mac address
-D. Interface FastEthernet0/2 has been disable.
-E. Multiple devices are connected directly to FastEthernet0/1.
-F. FastEthernet0/1 is connected to a host with multiple network interface cards.
-Correct Answer: AB
-
-QUESTION 341
-Why will a switch never learn a broadcast address?
-A. Broadcast frames are never sent to swiches.
-B. Broadcast addresses use an incorrect format for the switching table.
-C. A broadcast address will never be the source address of a frame.
-D. Broadcasts only use network layer addressing.
-E. A broadcast frame is never forwarded by a switch.
-Correct Answer: C
-
-QUESTION 97
-What are two reasons that duplex mismatches can be difficult to diagnose? (Choose two.)
-A. The interface displays a connected (up/up) state even when the duplex settings are mismatched.
-B. 1-Gbps interfaces are full-duplex by default.
-C. Full-duplex interfaces use CSMA/CD logic, so mismatches may be disguised by collisions.
-D. The symptoms of a duplex mismatch may be intermittent.
-E. Autonegotiation is disabled.
-Correct Answer: AD
-
-QUESTION 164
-Which three options are switchport config that can always avoid duplex mismatch error between the switches? (Choose Three.)
-A. set both side on auto-negotation
-B. set both sides on half-duplex
-C. set one side auto and other side half-duplex
-D. set both side of connection to full-duplex
-E. set one side auto and other side on full-duplex
-F. set one side full-duplex and other side half-duplex
-Correct Answer: ABD
-
-QUESTION 188
-Which symptom most commonly indicates that two connecting interface are configured with a duplex mismatch?
-A. an interface with up/down state
-B. an interface with down/down state
-C. late collisions on the interface
-D. the spanning tree process shutting down
-Correct Answer: C
-
-QUESTION 389
-Which symptom can cause duplex mismatch problem?
-A. no earner
-B. collisions on interface
-C. giants
-D. CRC errors
-Correct Answer: B
-
-QUESTION 109
-Refer to the exhibit. Give this output for SwitchC, what should the network administrator's next action be?
-A. Check the trunk encapsulation mode for SwitchC's fa0/1 port.
-B. Check the duplex mode for SwitchC's fa0/1 port.
-C. Check the duplex mode for SwitchA's fa0/2 port.
-D. Check the trunk encapsulation mode for SwitchA's fa0/2 port.
-Correct Answer: C
-
-QUESTION 178
-which command is used to know the duplex speed of serial link?
-A. show line
-B. show interface
-C. show protocol
-D. show run
-Correct Answer: B
-
-QUESTION 233
-Refer to exhibit. Which command can you enter to verify link speed and duplex setting on the interface?
-A. router# show protocols
-B. router#show startup-config
-C. router#show line
-D. router#show interface gig0/1
-Correct Answer: D
-
-QUESTION 75
-Which switching method duplicates the first six bytes of a frame before making a switching decision?
-A. fragment-free switching
-B. store and-forward switching
-C. cut through switching
-D. ASIC switching
-Correct Answer: C
-
-QUESTION 220
-How many broadcast domains are shown in the graphic assuming only the default vlan is configured on the switches?
-A. one
-B. six
-C. twelve
-D. two
-Correct Answer: A
-
-QUESTION 11
-If a router has four interfaces and each interface is connected to four switches, how many broadcast domains are present on the router?
-A. 1
-B. 2
-C. 4
-D. 8
-Correct Answer: C
-
-QUESTION 177
-Which type of cable must you use to connect two device with MDI interfaces ?
-A. cut-through
-B. straight-through
-C. crossover
-D. rollover
-Correct Answer: C
-
-QUESTION 40
-What are three characteristics of the TCP protocol? (Choose three.)
-A. It uses a single SYN-ACK message to establish a connection.
-B. The connection is established before data is transmitted.
-C. It ensures that all data is transmitted and received by the remote device.
-D. It supports significantly higher transmission speeds than UDP.
-E. It requires applications to determine when data packets must be retransmitted.
-F. It uses separate SYN and ACK messages to establish a connection.
-Correct Answer: BCF
-
-QUESTION 161
-In which byte of an IP packet can traffic be marked ?
-A. the QoS byte
-B. the CoS byte
-C. the ToS byte
-D. the DSCP byte
-Correct Answer: C
-
-QUESTION 171
-What layer of the OSI Model is included in TCP/IP Model's INTERNET layer?
-A. Application
-B. Session
-C. Data Link
-D. Presentation
-E. Network
-Correct Answer: E
-
-QUESTION 96
-Which command can you enter to verify that a 128-bit address is live and responding?
-A. traceroute
-B. telnet
-C. ping
-D. show ipv6
-Correct Answer: C
-
-QUESTION 143
-Which utility can you use to determine whether a switch can send echo requests and replies?
-A. ping
-B. traceroute
-C. ssh
-D. telnet
-Correct Answer: A
-
-QUESTION 325
-Which command can be used from a PC to verify the connectivity between hosts that connect through a switch in the same LAN?
-A. ping address
-B. tracert address
-C. traceroute address
-D. arp address
-Correct Answer: A
-
-QUESTION 245
-Which three encapsulation layers in the OSI model are combined into the TCP/IP application layer? (Choose three)
-A. Session
-B. transport
-C. presentation
-D. application
-E. data-link
-F. network
-Correct Answer: ACD
-
-QUESTION 317
-Which networking Technology is currently recognized as the standard for computer networking?
-A. System network architecture
-B. Transmission control protocol/Internet protocol
-C. Open system Interconnect
-D. Open network architecture
-Correct Answer: B
-
-QUESTION 415
-Where does routing occur within the DoD TCP/IP reference model?
-A. application
-B. internet
-C. network
-D. transport
-Correct Answer: B
-
-QUESTION 148
-Which two options are features of the extended ping command? (Choose two.)
-A. It can send a specific number of packet
-B. It can send packet from specified interface of IP address
-C. It can resolve the destination host name
-D. It can ping multiple host at the same time
-E. it can count the number of hops to the remote host.
-Correct Answer: AB
-
-QUESTION 184
-Which two statements about extended traceroute command are true? (choose two)
-A. it can send packets from a specified interface or ip address
-B. it can use a specified TTL value
-C. it can validate the reply data
-D. it can use a specificed TOS
-E. it can repeated automatically to a specified interval
-Correct Answer: AB
-
-QUESTION 157
-What are contained in layer 2 ethernet frame? (Choose Three.)
-A. Preamble
-B. TTL
-C. Type/length
-D. Frame check sequence
-E. version
-F. http://bbs.hh010.com/
-Correct Answer: ACD
-
-QUESTION 374
-Which two options are fields in an Ethernet frame? (choose two)
-A. frame check sequence
-B. header
-C. source IP address
-D. destination IP address
-E. type
-Correct Answer: AE
-
-QUESTION 35
-Which two correctly describe steps in the OSI data encapsulation process? (Choose two.)
-A. The transport layer divides a data stream into segments and may add reliability and flow control information.
-B. The data link layer adds physical source and destination addresses and an FCS to the segment.
-C. Packets are created when the network layer encapsulates a frame with source and destination host addresses and protocol-related control information.
-D. Packets are created when the network layer adds Layer 3 addresses and control information to a segment.
-E. The presentation layer translates bits into voltages for transmission across the physical link.
-Correct Answer: AD
-
-QUESTION 416
-If Computer A is sending traffic to computer B, which option is the source ip address when a packet leaves R1 on interface F0/1?
-A. IP address of the R2 interface
-B. Ip address of computer B
-C. Ip address of R1 interface
-D. Ip address of Computer A
-Correct Answer: D
-
-QUESTION 367
-When troubleshooting Ethernet connectivity issues, how can you verify that an IP address is known to a router?
-A. Check whether the IP address is in the routing table
-B. Check whether an ACL is blocking the IP address
-C. Check whether the IP address is in the CAM table
-D. Check whether the IP address is in the ARP table
-Correct Answer: D
-
-QUESTION 44
-What is the authoritative source for an address lookup?
-A. a recursive DNS search
-B. the operating system cache
-C. the ISP local cache
-D. the browser cache
-Correct Answer: A
-
-QUESTION 101
-Which layer in the OSI reference model is responsible for determining the availability of the receiving program and checking to see if enough resources exist for that communication?
-A. transport
-B. network
-C. presentation
-D. session
-E. application
-Correct Answer: E
-
-QUESTION 181
-When troubleshooting client DNS issues, which two task must you perform? (Choose two)
-A. Ping a public website IP address.
-B. Ping the DNS Server.
-C. Determine whether a DHCP address has been assigned.
-D. Determine whether the hardware address is correct.
-E. Determine whether the name servers have been configured
-Correct Answer: BE
-
-QUESTION 291
-What are two statement for SSH?
-A. use port 22
-B. unsecured
-C. encrypted
-D. most common remote-access method
-E. operate at transport
-Correct Answer: AC
-
-QUESTION 432
-Which two statements about UDP are true? (Choose two)
-A. It can transmit data at a rate higher than the path capacity
-B. It uses a three-way handshake to ensure that traffic is transmitted properly
-C. It guarantees packet delivery
-D. it includes protection against duplicate packets
-E. it can be used for multicast and broadcast traffic
-Correct Answer: AE
-
-QUESTION 229
-For what two purposes does the Ethernet protocol use physical addresses? (Choose two.)
-A. to uniquely identify devices at Layer 2
-B. to allow communication with devices on a different network
-C. to differentiate a Layer 2 frame from a Layer 3 packet
-D. to establish a priority system to determine which device gets to transmit first
-E. to allow communication between different devices on the same network
-F. to allow detection of a remote device when its physical address is unknown
-Correct Answer: AE`;
-
         /**
-         * 核心資料結構定義
+         * 核心資料與狀態管理
          */
+        let savedBanks = {}; // { "bankName": "text content..." }
+        let currentBankName = ''; 
+        let wrongQuestionsBank = {}; // { "bankName": [ {q1}, {q2} ] }
+        
         let allQuestions = [];
         let currentQuiz = [];
         let currentIndex = 0;
         let userAnswers = []; 
-        let wrongQuestionsBank = [];
         let currentFlashcardIndex = 0;
 
-        // --- 本地儲存 (localStorage) 輔助函數 ---
-        function loadFlashcardsFromStorage() {
+        // --- 本地儲存 (localStorage) 與題庫管家 ---
+        function loadBanksFromStorage() {
             try {
-                const stored = localStorage.getItem('quizForge_wrongBank');
-                if (stored) {
-                    wrongQuestionsBank = JSON.parse(stored);
+                // 1. 讀取題庫本文
+                const storedBanks = localStorage.getItem('quizForge_savedBanks');
+                if (storedBanks) {
+                    savedBanks = JSON.parse(storedBanks);
+                } else {
+                    // 取消載入預設的 CCNA 題庫，預設為空
+                    savedBanks = {};
+                }
+
+                // 2. 讀取錯題庫 (v2 結構為 Object)
+                const storedWrong = localStorage.getItem('quizForge_wrongBank_v2');
+                if (storedWrong) {
+                    wrongQuestionsBank = JSON.parse(storedWrong);
+                } else {
+                    // 向下相容：將舊版(v1)錯題遷移至名為「舊版錯題紀錄」的題庫中以免遺失
+                    const oldStored = localStorage.getItem('quizForge_wrongBank');
+                    if (oldStored) {
+                        wrongQuestionsBank['舊版錯題紀錄'] = JSON.parse(oldStored);
+                        localStorage.removeItem('quizForge_wrongBank'); // 刪除舊版
+                        saveFlashcardsToStorage();
+                    }
                 }
             } catch (e) {
-                console.error('無法讀取錯題紀錄', e);
+                console.error('無法讀取儲存的資料', e);
+                savedBanks = {};
             }
         }
 
+        function saveBanksToStorage() {
+            try { localStorage.setItem('quizForge_savedBanks', JSON.stringify(savedBanks)); } 
+            catch (e) { console.error('儲存題庫失敗', e); }
+        }
+
         function saveFlashcardsToStorage() {
-            try {
-                localStorage.setItem('quizForge_wrongBank', JSON.stringify(wrongQuestionsBank));
-            } catch (e) {
-                console.error('無法儲存錯題紀錄', e);
+            try { localStorage.setItem('quizForge_wrongBank_v2', JSON.stringify(wrongQuestionsBank)); } 
+            catch (e) { console.error('儲存錯題失敗', e); }
+        }
+
+        function renderBankSelector() {
+            const selector = document.getElementById('bankSelector');
+            selector.innerHTML = '';
+            
+            // 加入已儲存的題庫
+            for (let name in savedBanks) {
+                const opt = document.createElement('option');
+                opt.value = name;
+                opt.textContent = `📁 ${name}`;
+                selector.appendChild(opt);
+            }
+            
+            // 加入「新增」選項
+            const optNew = document.createElement('option');
+            optNew.value = '__NEW__';
+            optNew.textContent = '✚ 新增 / 上傳自訂題庫...';
+            selector.appendChild(optNew);
+            
+            if (currentBankName && savedBanks[currentBankName]) {
+                selector.value = currentBankName;
+            } else {
+                selector.value = '__NEW__';
             }
         }
 
@@ -1283,21 +915,49 @@ Correct Answer: AE`;
             quiz: document.getElementById('quizScreen'),
             result: document.getElementById('resultScreen'),
             flashcard: document.getElementById('flashcardScreen'),
-            modal: document.getElementById('quitModal')
+            modal: document.getElementById('quitModal'),
+            deleteModal: document.getElementById('deleteBankModal')
         };
         const elRawInput = document.getElementById('rawInput');
         const elBtnStart = document.getElementById('btnParseStart');
         const elStatus = document.getElementById('statusText');
         const elDropZone = document.getElementById('dropZone');
         const elFileInput = document.getElementById('fileInput');
+        const bankSelector = document.getElementById('bankSelector');
 
         // --- 初始化與事件綁定 ---
         function init() {
-            elRawInput.value = CCNA_BANK.trim();
+            loadBanksFromStorage();
+            
+            // 預設載入第一個題庫
+            const availableBanks = Object.keys(savedBanks);
+            if (availableBanks.length > 0) {
+                currentBankName = availableBanks[0];
+                elRawInput.value = savedBanks[currentBankName];
+            } else {
+                currentBankName = '';
+                elRawInput.value = '';
+            }
+
+            renderBankSelector();
             handleInputUpdate();
 
-            // 在初始化時讀取本地的錯題本紀錄
-            loadFlashcardsFromStorage();
+            // 監聽題庫下拉選單改變
+            bankSelector.addEventListener('change', (e) => {
+                const val = e.target.value;
+                if (val === '__NEW__') {
+                    elRawInput.value = '';
+                    currentBankName = '';
+                    // 自動展開上傳區
+                    document.getElementById('uploadDetails').open = true;
+                    handleInputUpdate();
+                } else {
+                    currentBankName = val;
+                    elRawInput.value = savedBanks[val];
+                    document.getElementById('uploadDetails').open = false; // 收起以保持畫面簡潔
+                    handleInputUpdate();
+                }
+            });
 
             elRawInput.addEventListener('input', debounce(handleInputUpdate, 500));
             
@@ -1331,9 +991,6 @@ Correct Answer: AE`;
             document.getElementById('customQCount').addEventListener('input', updateStatusText);
             elBtnStart.addEventListener('click', startQuizHandler);
             
-            updateFlashcardButtons();
-
-            // 註冊全域鍵盤快捷鍵
             initKeyboardShortcuts();
         }
 
@@ -1342,8 +999,7 @@ Correct Answer: AE`;
                 // 處理測驗畫面的快捷鍵
                 if (!screens.quiz.classList.contains('hidden') && screens.modal.classList.contains('hidden')) {
                     if (e.key === 'Enter' || e.code === 'Space') {
-                        // 防止空白鍵造成網頁捲動 (除非使用者正在操作按鈕等輸入元素)
-                        if (e.code === 'Space' && e.target.tagName !== 'BUTTON' && e.target.tagName !== 'INPUT') {
+                        if (e.code === 'Space' && e.target.tagName !== 'BUTTON' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
                             e.preventDefault();
                         }
                         
@@ -1351,10 +1007,8 @@ Correct Answer: AE`;
                         const btnSubmitMulti = document.getElementById('btnSubmitMulti');
 
                         if (!btnNext.classList.contains('hidden')) {
-                            // 若有「下一題/查看結果」按鈕，代表已批改，自動點擊
                             btnNext.click();
                         } else if (!btnSubmitMulti.classList.contains('hidden') && !btnSubmitMulti.disabled) {
-                            // 若是多選題且按鈕可用，代表可送出
                             btnSubmitMulti.click();
                         }
                     }
@@ -1363,7 +1017,7 @@ Correct Answer: AE`;
                 // 處理閃卡畫面的快捷鍵
                 if (!screens.flashcard.classList.contains('hidden')) {
                     if (e.code === 'Space') {
-                        if (e.target.tagName !== 'BUTTON') e.preventDefault();
+                        if (e.target.tagName !== 'BUTTON' && e.target.tagName !== 'TEXTAREA') e.preventDefault();
                         flipFlashcard();
                     } else if (e.key === 'ArrowRight') {
                         if (!document.getElementById('fcBtnNext').disabled) nextFlashcard();
@@ -1384,8 +1038,11 @@ Correct Answer: AE`;
 
         function switchScreen(screenName) {
             Object.values(screens).forEach(s => s.classList.add('hidden'));
-            if(screenName !== 'modal') screens[screenName].classList.remove('hidden');
-            else screens.modal.classList.remove('hidden'); 
+            if(screenName !== 'modal' && screenName !== 'deleteModal') {
+                screens[screenName].classList.remove('hidden');
+            } else {
+                screens[screenName].classList.remove('hidden'); 
+            }
         }
 
         function shuffleArray(array) {
@@ -1439,15 +1096,16 @@ Correct Answer: AE`;
                         const textContent = await page.getTextContent();
                         
                         const items = textContent.items;
+                        // 改良版 Y 座標合併：增加容許範圍到 10，徹底解決 PDF 排版錯位產生的孤兒題號
                         items.sort((a, b) => {
-                            if (Math.abs(a.transform[5] - b.transform[5]) > 3) return b.transform[5] - a.transform[5];
+                            if (Math.abs(a.transform[5] - b.transform[5]) > 10) return b.transform[5] - a.transform[5];
                             return a.transform[4] - b.transform[4];
                         });
 
                         let pageText = '';
                         let lastY = -1;
                         for (const item of items) {
-                            if (lastY !== -1 && Math.abs(item.transform[5] - lastY) > 3) pageText += '\n';
+                            if (lastY !== -1 && Math.abs(item.transform[5] - lastY) > 10) pageText += '\n';
                             else if (lastY !== -1) pageText += ' ';
                             pageText += item.str;
                             lastY = item.transform[5];
@@ -1466,6 +1124,8 @@ Correct Answer: AE`;
                     previewContent.classList.add('hidden');
                     document.getElementById('pdfPreviewIcon').textContent = '▼';
 
+                    // 收起上傳區，優化視覺
+                    document.getElementById('uploadDetails').open = false;
                     handleInputUpdate();
                 } catch (e) {
                     console.error(e);
@@ -1488,16 +1148,36 @@ Correct Answer: AE`;
             }
         }
 
-        // --- 模塊 3：題目解析器 (Parser) ---
+        // --- 模塊 3：題目解析器與題庫管理 ---
         function handleInputUpdate() {
             const text = elRawInput.value;
             if (!text.trim()) {
                 allQuestions = [];
+                currentBankName = '';
                 updateStatusText();
+                updateFlashcardButtons();
                 return;
             }
+            
+            // 自動擷取第一行作為題庫名稱
+            const lines = text.split('\n');
+            const firstLine = lines.find(l => l.trim().length > 0);
+            currentBankName = firstLine ? firstLine.trim().substring(0, 40) : '未命名題庫';
+
+            // 將文字內容存入 LocalStorage 題庫管家
+            savedBanks[currentBankName] = text;
+            saveBanksToStorage();
+            
+            // 若為全新題庫，重新渲染下拉選單
+            if (!document.querySelector(`#bankSelector option[value="${currentBankName}"]`)) {
+                renderBankSelector();
+            } else {
+                bankSelector.value = currentBankName;
+            }
+
             allQuestions = parseQuestions(normaliseText(text));
             updateStatusText();
+            updateFlashcardButtons();
         }
 
         function parseQuestions(text) {
@@ -1505,35 +1185,39 @@ Correct Answer: AE`;
             let lines = text.split('\n');
             let bottomAnswersMap = {};
             
-            const answerLineRegex = /(?:\d+\s*[\.\:\-]\s*[A-H1-5]+(?:\s*,\s*[A-H1-5]+)*\s*){4,}/i; 
-            
+            // 1. 更嚴格的底部答案區解析 (Format C)
             let possibleAnswerBlock = "";
             let blockStartIdx = -1;
+            const strictAnswerLineRegex = /^\s*(?:\d{1,3}\s*[\.\:\-]\s*[A-H1-5]{1,5}(?:\s*,\s*[A-H1-5]{1,5})*\s*)+$/i; 
+            
             for(let i = lines.length - 1; i >= 0; i--) {
-                if(lines[i].trim() === '') continue;
-                if(lines[i].match(/\d+\s*[\.\:\-]?\s*[A-H1-5]/i)) {
-                    possibleAnswerBlock = lines[i] + " " + possibleAnswerBlock;
+                let line = lines[i].trim();
+                if(line === '') continue;
+                
+                if(strictAnswerLineRegex.test(line)) {
+                    possibleAnswerBlock = line + " " + possibleAnswerBlock;
                     blockStartIdx = i;
-                } else if(possibleAnswerBlock.length > 0 && !lines[i].match(/^\s*$/)) {
-                    if(possibleAnswerBlock.match(answerLineRegex)) break;
-                    possibleAnswerBlock = "";
+                } else if(possibleAnswerBlock.length > 0) {
+                    break;
                 }
             }
             
-            if(possibleAnswerBlock.match(answerLineRegex)) {
-                const pairs = possibleAnswerBlock.match(/\d+\s*[\.\:\-]?\s*[A-H1-5]+(?:\s*,\s*[A-H1-5]+)*/ig) || [];
-                pairs.forEach(p => {
-                    const match = p.match(/(\d+)\s*[\.\:\-]?\s*([A-H1-5]+(?:\s*,\s*[A-H1-5]+)*)/i);
-                    if(match) {
-                        const qNum = match[1];
-                        let ansStr = match[2].toUpperCase().replace(/[^A-H1-5]/g, '');
-                        bottomAnswersMap[qNum] = ansStr.split('');
-                    }
-                });
-                lines = lines.slice(0, blockStartIdx);
+            if(possibleAnswerBlock.length > 0) {
+                const pairs = possibleAnswerBlock.match(/\d{1,3}\s*[\.\:\-]?\s*[A-H1-5]{1,5}(?:\s*,\s*[A-H1-5]{1,5})*/ig) || [];
+                if (pairs.length >= 4) {
+                    pairs.forEach(p => {
+                        const match = p.match(/(\d+)\s*[\.\:\-]?\s*([A-H1-5]{1,5}(?:\s*,\s*[A-H1-5]{1,5})*)/i);
+                        if(match) {
+                            const qNum = match[1];
+                            let ansStr = match[2].toUpperCase().replace(/[^A-H1-5]/g, '');
+                            bottomAnswersMap[qNum] = ansStr.split('');
+                        }
+                    });
+                    lines = lines.slice(0, blockStartIdx);
+                }
             }
 
-            const qHeaderRegex = /^(?:QUESTION\s*|Q\.?\s*|第\s*)?(\d+)[\.\)題题]?\s*(.*)/i;
+            // 2. 主解析迴圈
             let currentQ = null;
             let parsingState = "idle";
             let tempOptions = [];
@@ -1542,24 +1226,51 @@ Correct Answer: AE`;
                 let line = lines[i].trim();
                 if (!line) continue;
 
-                let qMatch = line.match(qHeaderRegex);
+                // 增強版雜訊過濾：忽略字元間的空白來辨識浮水印
+                let noSpaceLine = line.replace(/\s+/g, '');
+                if (noSpaceLine.match(/^[-—]*PAGE\d+[-—]*$/i)) continue;
+                if (noSpaceLine.match(/MINISTRYOFLABOR|17200網路架設|版次編號|技術士技能檢定|檔案名稱|公告日期|報檢者適用|WORKOFLABOR|DEVEL|MINISTE/i)) continue;
+                if (line.match(/^\d+$/) && (parsingState === "finished" || parsingState === "idle")) continue;
+
+                // 新版題型：開頭就帶有題號與答案 "204. (234)" 或 "1. (2)" (利用 PDF 新版容錯率，已解決斷層問題)
+                let newFormatMatch = line.match(/^(\d+)\s*[\.\)]\s*[\(（]([A-H1-5]+)[\)）]\s*(.*)/i);
+                
+                // 舊版題型：QUESTION 54 或 1. (沒有直接接括號答案)
+                let qMatch = line.match(/^(?:QUESTION\s+|Q\.?\s+|第\s*)(\d+)[\.\)題题]?\s*(.*)/i) || 
+                             line.match(/^(\d+)\s*[\.\)]\s+(.*)/i);
                 let inlineAnsMatch = line.match(/^[\(（]([A-H1-5])[）\)]\s*(\d+)[\.\)題题]?\s*(.*)/i);
+                
                 let isNewQuestion = false;
                 let parsedQNum = null;
                 let extractedInlineAns = null;
                 let qTextStart = "";
 
-                if (inlineAnsMatch) {
+                if (newFormatMatch) {
+                    isNewQuestion = true;
+                    parsedQNum = newFormatMatch[1];
+                    extractedInlineAns = newFormatMatch[2].split('');
+                    qTextStart = newFormatMatch[3] || "";
+                } else if (inlineAnsMatch) {
                     isNewQuestion = true;
                     extractedInlineAns = [inlineAnsMatch[1].toUpperCase()];
                     parsedQNum = inlineAnsMatch[2];
-                    qTextStart = inlineAnsMatch[3];
+                    qTextStart = inlineAnsMatch[3] || "";
                 } else if (qMatch) {
                     if (parsingState === "in_opt" && parseInt(qMatch[1]) <= 5 && tempOptions.length < 5) {
+                        // 可能是選項 1. 2. 3.，交由選項處理
                     } else {
                         isNewQuestion = true;
                         parsedQNum = qMatch[1];
-                        qTextStart = qMatch[2];
+                        qTextStart = qMatch[2] || "";
+                    }
+                } else if (parsingState === "finished" || parsingState === "idle") {
+                    // 支援無題號的直接開頭題目
+                    if (!line.match(/^([A-H])[\.\)]\s*(.*)/i) &&
+                        !line.match(/^(?:Correct Answer|Answer|解答|答案)/i) &&
+                        !line.match(/^Explanation/i)) {
+                        isNewQuestion = true;
+                        parsedQNum = (questions.length + 1).toString();
+                        qTextStart = line || "";
                     }
                 }
 
@@ -1584,13 +1295,14 @@ Correct Answer: AE`;
                     if (ansLineMatch) {
                         let ansStr = ansLineMatch[1].toUpperCase().replace(/[^A-H1-5]/g, '');
                         if(ansStr) currentQ.correctAnswers = ansStr.split('');
+                        parsingState = "finished";
                         continue;
                     }
 
                     const optMatch = line.match(/^([A-H])[\.\)]\s*(.*)/i) || line.match(/^[\(（]([1-5])[）\)]\s*(.*)/i);
                     if (optMatch) {
                         parsingState = "in_opt";
-                        tempOptions.push({ originalKey: optMatch[1].toUpperCase(), text: optMatch[2] });
+                        tempOptions.push({ originalKey: optMatch[1].toUpperCase(), text: (optMatch[2] || "").trim() });
                         continue;
                     }
 
@@ -1599,7 +1311,7 @@ Correct Answer: AE`;
                         parsingState = "in_opt";
                         inlineOpts.forEach(optStr => {
                             let m = optStr.match(/[\(（]([A-H1-5])[）\)]\s*(.*)/i);
-                            if(m) tempOptions.push({ originalKey: m[1].toUpperCase(), text: m[2].trim() });
+                            if(m) tempOptions.push({ originalKey: m[1].toUpperCase(), text: (m[2] || "").trim() });
                         });
                         continue;
                     }
@@ -1616,11 +1328,60 @@ Correct Answer: AE`;
         }
 
         function finalizeQuestion(q, opts, outArray) {
-            q.questionText = q.questionText.trim();
+            // 加入極度嚴格的安全處理，杜絕 Cannot read properties of undefined
+            q.questionText = (q.questionText || "").trim();
+            
+            // 處理內嵌選項 (1)...(2)...(3)...(4)...
+            if (opts.length === 0) {
+                const extractPattern = (keys) => {
+                    let qText = q.questionText || "";
+                    let extractedOpts = [];
+                    let hasAll = true;
+                    let currentText = qText;
+                    let baseQText = "";
+                    
+                    for (let i = 0; i < keys.length; i++) {
+                        let key = keys[i];
+                        let regex = new RegExp(`[\\(（]${key}[\\)）]`);
+                        let parts = currentText.split(regex);
+                        
+                        if (parts.length > 1) {
+                            if (i === 0) {
+                                baseQText = parts[0] || "";
+                            } else {
+                                extractedOpts.push({ originalKey: keys[i-1], text: (parts[0] || "").trim() });
+                            }
+                            currentText = parts.slice(1).join(`(${key})`);
+                        } else {
+                            if (i < 2) hasAll = false;
+                            if (i > 0 && hasAll) {
+                                 extractedOpts.push({ originalKey: keys[i-1], text: (currentText || "").trim() });
+                            }
+                            hasAll = false;
+                            break;
+                        }
+                        
+                        if (i === keys.length - 1 && hasAll) {
+                            extractedOpts.push({ originalKey: key, text: (currentText || "").trim() });
+                        }
+                    }
+                    if (extractedOpts.length >= 2) {
+                        q.questionText = (baseQText || "").trim();
+                        opts = extractedOpts; 
+                        return true;
+                    }
+                    return false;
+                };
+
+                if (!extractPattern(['1','2','3','4','5'])) {
+                    extractPattern(['A','B','C','D','E']);
+                }
+            }
+
             q.options = opts.map(o => {
-                let text = o.text.trim();
+                let text = (o.text || "").trim();
                 if(text.match(/^https?:\/\//i)) text += "\n(含連結，請對照原題)";
-                return { originalKey: o.originalKey, text: text };
+                return { originalKey: o.originalKey || "", text: text };
             });
 
             const imgKeywords = /refer to exhibit|附圖|右圖|附表|下圖/i;
@@ -1631,7 +1392,7 @@ Correct Answer: AE`;
 
             if (q.options.length > 0 && q.options[0].originalKey.match(/[1-5]/)) {
                 const map = {'1':'A','2':'B','3':'C','4':'D','5':'E'};
-                q.options.forEach(o => o.originalKey = map[o.originalKey]);
+                q.options.forEach(o => o.originalKey = map[o.originalKey] || o.originalKey);
                 q.correctAnswers = q.correctAnswers.map(ans => map[ans] || ans);
             }
             outArray.push(q);
@@ -1640,7 +1401,7 @@ Correct Answer: AE`;
         function updateStatusText() {
             const validCount = allQuestions.length;
             if (validCount === 0) {
-                elStatus.textContent = '未偵測到有效題目。';
+                elStatus.textContent = '未偵測到有效題目，請檢查格式。';
                 elStatus.style.color = 'var(--danger)';
                 elBtnStart.disabled = true;
                 return;
@@ -1850,12 +1611,20 @@ Correct Answer: AE`;
         }
 
         function collectWrongQuestions() {
+            if (!currentBankName || currentBankName === '__NEW__') return;
+            
+            // 初始化該題庫的錯題陣列
+            if (!wrongQuestionsBank[currentBankName]) {
+                wrongQuestionsBank[currentBankName] = [];
+            }
+
             userAnswers.forEach(ans => {
-                if (!ans.isCorrect) {
-                    const exists = wrongQuestionsBank.find(wq => wq.questionText === ans.questionText);
+                // 只針對有作答且答錯的題目加入閃卡 (未作答長度為 0 則忽略)
+                if (!ans.isCorrect && ans.selectedKeys && ans.selectedKeys.length > 0) {
+                    const exists = wrongQuestionsBank[currentBankName].find(wq => wq.questionText === ans.questionText);
                     if (!exists) {
                         const originalQ = currentQuiz.find(q => q.id === ans.qId);
-                        if (originalQ) wrongQuestionsBank.push(originalQ);
+                        if (originalQ) wrongQuestionsBank[currentBankName].push(originalQ);
                     }
                 }
             });
@@ -1864,11 +1633,21 @@ Correct Answer: AE`;
         }
 
         function updateFlashcardButtons() {
-            const count = wrongQuestionsBank.length;
             const btnHome = document.getElementById('btnHomeFlashcard');
             
+            if (!currentBankName || currentBankName === '__NEW__') {
+                btnHome.innerHTML = `⧉ 錯題閃卡 (0)`;
+                btnHome.disabled = true;
+                return;
+            }
+
+            const count = wrongQuestionsBank[currentBankName] ? wrongQuestionsBank[currentBankName].length : 0;
             btnHome.innerHTML = `⧉ 錯題閃卡 (${count})`;
             btnHome.disabled = count === 0;
+            
+            // 結算畫面按鈕如果有存在
+            const btnResult = document.getElementById('btnResultFlashcard');
+            if (btnResult) btnResult.disabled = count === 0;
         }
 
         function renderRestartSettings() {
@@ -1948,8 +1727,12 @@ Correct Answer: AE`;
 
         // --- 模塊 6：錯題閃卡 ---
         function openFlashcards() {
-            if (wrongQuestionsBank.length === 0) return;
+            if (!currentBankName || !wrongQuestionsBank[currentBankName] || wrongQuestionsBank[currentBankName].length === 0) return;
             switchScreen('flashcard');
+            
+            // 更新標題為當前題庫名稱
+            document.getElementById('fcTitleHeader').textContent = `⧉ 錯題複習: ${currentBankName}`;
+            
             currentFlashcardIndex = 0;
             renderFlashcard();
         }
@@ -1957,8 +1740,9 @@ Correct Answer: AE`;
         function renderFlashcard() {
             const emptyState = document.getElementById('fcEmptyState');
             const workspace = document.getElementById('fcWorkspace');
+            const currentWrongBank = wrongQuestionsBank[currentBankName] || [];
             
-            if (wrongQuestionsBank.length === 0) {
+            if (currentWrongBank.length === 0) {
                 emptyState.classList.remove('hidden');
                 workspace.classList.add('hidden');
                 updateFlashcardButtons();
@@ -1968,10 +1752,10 @@ Correct Answer: AE`;
                 workspace.classList.remove('hidden');
             }
 
-            const q = wrongQuestionsBank[currentFlashcardIndex];
+            const q = currentWrongBank[currentFlashcardIndex];
             
             document.getElementById('fcCurrentNum').textContent = currentFlashcardIndex + 1;
-            document.getElementById('fcTotalNum').textContent = wrongQuestionsBank.length;
+            document.getElementById('fcTotalNum').textContent = currentWrongBank.length;
 
             document.getElementById('fcInner').classList.remove('flipped');
 
@@ -1990,7 +1774,7 @@ Correct Answer: AE`;
             document.getElementById('fcCorrectText').innerHTML = correctOptsText;
 
             document.getElementById('fcBtnPrev').disabled = currentFlashcardIndex === 0;
-            document.getElementById('fcBtnNext').disabled = currentFlashcardIndex === wrongQuestionsBank.length - 1;
+            document.getElementById('fcBtnNext').disabled = currentFlashcardIndex === currentWrongBank.length - 1;
         }
 
         function flipFlashcard() {
@@ -1998,7 +1782,8 @@ Correct Answer: AE`;
         }
 
         function nextFlashcard() {
-            if (currentFlashcardIndex < wrongQuestionsBank.length - 1) {
+            const currentWrongBank = wrongQuestionsBank[currentBankName] || [];
+            if (currentFlashcardIndex < currentWrongBank.length - 1) {
                 currentFlashcardIndex++;
                 renderFlashcard();
             }
@@ -2012,8 +1797,9 @@ Correct Answer: AE`;
         }
 
         function removeCurrentFlashcard() {
-            wrongQuestionsBank.splice(currentFlashcardIndex, 1);
-            if (currentFlashcardIndex >= wrongQuestionsBank.length && currentFlashcardIndex > 0) {
+            const currentWrongBank = wrongQuestionsBank[currentBankName] || [];
+            currentWrongBank.splice(currentFlashcardIndex, 1);
+            if (currentFlashcardIndex >= currentWrongBank.length && currentFlashcardIndex > 0) {
                 currentFlashcardIndex--;
             }
             saveFlashcardsToStorage(); 
@@ -2021,8 +1807,7 @@ Correct Answer: AE`;
             renderFlashcard();
         }
 
-
-        // --- Modal 控制 ---
+        // --- Modal 控制 (刪除題庫 與 退出測驗) ---
         function showQuitModal() { screens.modal.classList.remove('hidden'); }
         function hideQuitModal() { screens.modal.classList.add('hidden'); }
         function forceEndQuiz() {
@@ -2042,6 +1827,35 @@ Correct Answer: AE`;
             } else {
                 switchScreen('upload');
             }
+        }
+
+        function showDeleteBankModal() { 
+            if (!currentBankName || currentBankName === '__NEW__') return;
+            document.getElementById('deleteBankText').textContent = `這將會清除「${currentBankName}」的所有內容與對應的錯題紀錄，且無法恢復。`;
+            screens.deleteModal.classList.remove('hidden'); 
+        }
+        function hideDeleteBankModal() { screens.deleteModal.classList.add('hidden'); }
+        function confirmDeleteBank() {
+            hideDeleteBankModal();
+            if (!currentBankName || currentBankName === '__NEW__') return;
+            
+            // 刪除該題庫與其錯題
+            delete savedBanks[currentBankName];
+            delete wrongQuestionsBank[currentBankName];
+            saveBanksToStorage();
+            saveFlashcardsToStorage();
+            
+            // 重新載入下一個可用的題庫或清空
+            const remainingBanks = Object.keys(savedBanks);
+            if (remainingBanks.length > 0) {
+                currentBankName = remainingBanks[0];
+                elRawInput.value = savedBanks[currentBankName];
+            } else {
+                currentBankName = '';
+                elRawInput.value = '';
+            }
+            renderBankSelector();
+            handleInputUpdate();
         }
 
         // 啟動應用
